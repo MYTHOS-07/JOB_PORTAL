@@ -1,0 +1,170 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  JOB_SEEKER
+  EMPLOYER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
+enum CompanyStatus {
+  PENDING
+  APPROVED
+  SUSPENDED
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  REMOTE
+}
+
+enum ExperienceLevel {
+  ENTRY_LEVEL
+  MID_LEVEL
+  SENIOR
+  LEAD
+}
+
+enum JobStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  ARCHIVED
+}
+
+enum ApplicationStatus {
+  PENDING
+  REVIEWING
+  SHORTLISTED
+  INTERVIEW
+  REJECTED
+  ACCEPTED
+  WITHDRAWN
+}
+
+/// Login credentials, role, and session version for JWT invalidation.
+model User {
+  id           Int        @id @default(autoincrement())
+  name         String
+  email        String     @unique
+  password     String
+  role         Role       @default(JOB_SEEKER)
+  status       UserStatus @default(ACTIVE)
+  tokenVersion Int        @default(0)
+  avatarUrl    String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  profile       UserProfile?
+  company       Company?
+  applications  Application[]
+  notifications Notification[]
+}
+
+/// Extra job-seeker profile fields, including resume path.
+model UserProfile {
+  id        Int     @id @default(autoincrement())
+  userId    Int     @unique
+  phone     String?
+  location  String?
+  resumeUrl String?
+  bio       String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/// One employer account owns one company profile.
+model Company {
+  id          Int           @id @default(autoincrement())
+  userId      Int           @unique
+  companyName String
+  description String?
+  industry    String?
+  website     String?
+  location    String?
+  phone       String?
+  logoUrl     String?
+  status      CompanyStatus @default(APPROVED)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobs Job[]
+}
+
+model JobCategory {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+  slug String @unique
+  jobs Job[]
+}
+
+model Job {
+  id                  Int             @id @default(autoincrement())
+  companyId           Int
+  categoryId          Int
+  title               String
+  description         String
+  location            String
+  employmentType      EmploymentType
+  experienceLevel     ExperienceLevel @default(ENTRY_LEVEL)
+  salaryMin           Decimal?        @db.Decimal(12, 2)
+  salaryMax           Decimal?        @db.Decimal(12, 2)
+  status              JobStatus       @default(DRAFT)
+  applicationDeadline DateTime?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  company      Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category     JobCategory   @relation(fields: [categoryId], references: [id])
+  applications Application[]
+
+  @@index([status, createdAt])
+  @@index([location])
+}
+
+/// Unique (jobId, applicantId) prevents duplicate applications.
+model Application {
+  id          Int               @id @default(autoincrement())
+  jobId       Int
+  applicantId Int
+  coverLetter String?
+  status      ApplicationStatus @default(PENDING)
+  appliedAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  job       Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  applicant User @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, applicantId])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  title     String
+  message   String
+  type      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+}

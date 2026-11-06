@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+**/node_modules/
+
+# Secrets — never commit these
+.env
+.env.local
+.env.*.local
+.env.*
+!.env.example
+!.env.*.example
+
+# Next.js
+frontend/.next/
+frontend/out/
+frontend/AGENTS.md
+
+# Build
+backend/dist/
+frontend/build/
+*.tsbuildinfo
+
+# Prisma generated client
+backend/src/generated/
+
+# Uploads (keep the empty folder)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Logs and coverage
+*.log
+logs/
+coverage/
+
+# Editor and OS
+.vscode/
+.idea/
+.cursor/
+.DS_Store
+Thumbs.db
+
+# Temp
+__pycache__/
+*.tmp
+*.docx
+*.pptx

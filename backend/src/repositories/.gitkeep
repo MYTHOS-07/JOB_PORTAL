@@ -1,0 +1,2 @@
+# Repository classes live in ../dao (data access objects).
+# Keep this folder so the MVC layout from the design document is easy to find.
